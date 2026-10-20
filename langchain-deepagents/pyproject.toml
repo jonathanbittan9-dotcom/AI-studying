@@ -22,3 +22,13 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/discord_agent"]
+
+
+
+dependencies = [
+    "deepagents>=0.7",
+    "langchain-anthropic>=1.7",
+    "langchain-google-genai>=4.4",
+    "langchain-groq>=1.0",
+    "python-dotenv>=1.0",
+]
