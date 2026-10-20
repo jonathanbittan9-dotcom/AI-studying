@@ -3,12 +3,16 @@ name = "discord-agent"
 version = "0.1.0"
 description = "An AI agent that chats with, informs, and manages a Discord server."
 requires-python = ">=3.12"
+
+
 dependencies = [
     "deepagents>=0.7",
     "langchain-anthropic>=1.7",
     "langchain-google-genai>=4.4",
+    "langchain-groq>=1.0",
     "python-dotenv>=1.0",
 ]
+
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
@@ -24,11 +28,3 @@ build-backend = "hatchling.build"
 packages = ["src/discord_agent"]
 
 
-
-dependencies = [
-    "deepagents>=0.7",
-    "langchain-anthropic>=1.7",
-    "langchain-google-genai>=4.4",
-    "langchain-groq>=1.0",
-    "python-dotenv>=1.0",
-]
