@@ -11,6 +11,8 @@ dependencies = [
     "langchain-google-genai>=4.4",
     "langchain-groq>=1.0",
     "python-dotenv>=1.0",
+    "discord.py>=2.4",
+    "colorlog>=6.8",
 ]
 
 

@@ -9,7 +9,7 @@ class Message:
 
 
 def minutes_ago(minutes:int) -> datatime:
-    return datatime.now() - timedelta(minutes=minutes)
+    return datetime.now() - timedelta(minutes=minutes)
 
 CHANNELS: dict[str, list[Message]] = {
     "announcements": [
