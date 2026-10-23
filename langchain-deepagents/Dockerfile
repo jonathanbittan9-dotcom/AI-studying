@@ -1,5 +1,5 @@
 FROM python:3.14-slim
-WORKDIR deepagents
-RUN pip install deepagents
-RUN pip install discord.py
-RUN pip install colorlog
+WORKDIR /deepagents
+COPY . .
+RUN pip install .
+CMD ["python" , "-m" , "discord_agent.bot"]
