@@ -1,5 +1,5 @@
 from langchain.tools import ToolRuntime , tool
-from discord_agent.context import botcontext
+from discord_agent.context.botcontext import BotContext
 
 @tool
 async def list_channels(runtime: ToolRuntime[botcontext]) -> str:
@@ -10,5 +10,5 @@ async def list_channels(runtime: ToolRuntime[botcontext]) -> str:
         topic = channel.topic or "no topic"
         lines.append(f"#{channel.name} - {topic}")
     
-    return"\n .join(lines)"
-    
+    return"\n".join(lines)
+

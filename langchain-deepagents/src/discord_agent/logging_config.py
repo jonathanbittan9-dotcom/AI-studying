@@ -18,3 +18,5 @@ def setup_logging(level: int = logging.INFO) -> None:
         },
     ))
     logging.basicConfig(level=level, handlers=[handler])
+    # Our own package logs in detail (e.g. every agent step); libraries stay at `level`.
+    logging.getLogger("discord_agent").setLevel(logging.DEBUG)

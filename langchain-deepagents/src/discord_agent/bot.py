@@ -3,17 +3,13 @@ import logging
 import discord
 from discord import app_commands
 
+from discord_agent.agent import build_agent
 from discord_agent.config import Settings
-from discord_agent.llm import create_model
+from discord_agent.context.botcontext import BotContext
 
 log = logging.getLogger(__name__)
 
 DISCORD_MESSAGE_LIMIT = 2000
-
-SYSTEM_PROMPT = (
-    "You are Raider, a friendly Discord bot. "
-    "Answer in a short, casual way, like a Discord message."
-)
 
 
 class RaiderClient(discord.Client):
@@ -24,7 +20,7 @@ class RaiderClient(discord.Client):
         super().__init__(intents=intents)
 
         self.settings = settings
-        self.model = create_model()
+        self.agent = build_agent()
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self) -> None:
@@ -38,17 +34,19 @@ class RaiderClient(discord.Client):
             await self.tree.sync()
             log.info("Slash commands synced globally")
 
-    async def answer(self, question: str) -> str:
-        """Turn a user's question into the bot's reply.
+    async def answer(self, question: str, context: BotContext) -> str:
+        """Run the agent on a user's question and return the reply text.
 
-        This is the single place the "brain" lives. Today it's one LLM call;
-        later it becomes the deep agent.
+        This is the single place the "brain" is called from; Discord code never
+        talks to the agent directly.
         """
-        reply = await self.model.ainvoke([
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": question},
-        ])
-        return reply.content[:DISCORD_MESSAGE_LIMIT]
+        result = await self.agent.ainvoke(
+            {"messages": [{"role": "user", "content": question}]},
+            context=context,
+        )
+        for message in result["messages"]:
+            log.debug("%s", message.pretty_repr())
+        return result["messages"][-1].text[:DISCORD_MESSAGE_LIMIT]
 
 
 def create_client(settings: Settings) -> RaiderClient:
@@ -62,23 +60,28 @@ def create_client(settings: Settings) -> RaiderClient:
     async def on_message(message: discord.Message):
         if message.author.bot:
             return
+        if message.guild is None:  # DMs have no server to act on
+            return
         if client.user not in message.mentions:
             return
 
         question = message.content.replace(client.user.mention, "").strip()
         log.info("%s asked in #%s: %s", message.author, message.channel, question)
 
+        context = BotContext(guild=message.guild, requester=message.author)
         async with message.channel.typing():
-            reply = await client.answer(question)
+            reply = await client.answer(question, context)
         await message.reply(reply)
 
     @client.tree.command(name="ask", description="Ask Raider anything")
     @app_commands.describe(question="What do you want to ask?")
+    @app_commands.guild_only()
     async def ask(interaction: discord.Interaction, question: str):
         log.info("%s used /ask: %s", interaction.user, question)
         # Discord drops interactions not answered within 3 seconds; defer buys time.
         await interaction.response.defer(thinking=True)
-        reply = await client.answer(question)
+        context = BotContext(guild=interaction.guild, requester=interaction.user)
+        reply = await client.answer(question, context)
         await interaction.followup.send(reply)
 
     return client
