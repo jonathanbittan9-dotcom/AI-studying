@@ -14,7 +14,7 @@ SYSTEM_PROMPT = (
 def build_agent():
     return create_deep_agent(
         model=create_model(),
-        tools=[list_channels],
+        tools=[list_channels , roles],
         system_prompt=SYSTEM_PROMPT,
         context_schema=BotContext,
     )
