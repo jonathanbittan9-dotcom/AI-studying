@@ -12,4 +12,3 @@ async def list_channels(runtime: ToolRuntime[BotContext]) -> str:
         lines.append(f"#{channel.name} - {topic}")
     
     return "\n".join(lines)
-
