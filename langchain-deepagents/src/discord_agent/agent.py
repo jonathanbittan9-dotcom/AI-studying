@@ -1,4 +1,5 @@
 from deepagents import create_deep_agent
+from langchain.agents.middleware import TodoListMiddleware
 
 from discord_agent.context.botcontext import BotContext
 from discord_agent.llm import create_model
@@ -20,4 +21,5 @@ def build_agent():
         tools=[list_channels, list_roles , get_server_info , read_channel],
         system_prompt=SYSTEM_PROMPT,
         context_schema=BotContext,
+        middleware=[TodoListMiddleware()]
     )
