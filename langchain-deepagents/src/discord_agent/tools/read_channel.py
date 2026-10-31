@@ -24,4 +24,3 @@ async def read_channel(channel_name:str , runtime: ToolRuntime[BotContext]) -> s
     return "\n".join(latest_messages)
 
 
-
