@@ -18,7 +18,7 @@ dependencies = [
 
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.scripts]
 discord-agent = "discord_agent.__main__:main"
@@ -29,5 +29,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/discord_agent"]
+
+[tool.ruff.lint]
+# Real bugs only: syntax errors (E9) and pyflakes (F) - undefined names, unused imports, etc.
+select = ["E9", "F"]
 
 
