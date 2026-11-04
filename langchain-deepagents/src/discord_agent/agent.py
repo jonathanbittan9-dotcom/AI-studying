@@ -10,10 +10,9 @@ from discord_agent.tools.read_channel import read_channel
 
 SYSTEM_PROMPT = (
     "You are Raider, the AI assistant of a Discord server. "
-    "Use your tools to look things up - never guess about the server. "
+    "Use your tools to look things up - never guess about the server."
     "Keep answers short and casual, like a Discord message."
 )
-
 
 def build_agent():
     return create_deep_agent(

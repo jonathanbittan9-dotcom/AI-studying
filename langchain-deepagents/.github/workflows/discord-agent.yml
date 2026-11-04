@@ -1,0 +1,6 @@
+name: discord-agent CI
+
+on:
+  pull_request:
+    paths: ["langchain-deepagents/**"]
+
