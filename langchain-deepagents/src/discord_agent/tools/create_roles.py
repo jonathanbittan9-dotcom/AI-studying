@@ -1,32 +1,52 @@
-from langchain.tools import tool , ToolRuntime
-from discord_agent.context.botcontext import BotContext
 import discord
+from langchain.tools import ToolRuntime, tool
+
+from discord_agent.context.botcontext import BotContext
+
+
+def get_context(runtime: ToolRuntime[BotContext]) -> tuple[discord.Guild, discord.Member]:
+    """Return the server and the member who asked."""
+    return runtime.context.guild, runtime.context.requester
 
 
 @tool
-async def manage_roles(name: str, runtime: ToolRuntime[BotContext]) -> str:
-    "creates roles in the discord server"
-    guild = runtime.context.guild
-    requester = runtime.context.requester
-    roles_premissions = []
-    premission = requester.guild_permissions.manage_roles
-    if premission:
-        premission = "premission to manage roles approved"
-    else:
-        premission = "premession to manage roles denied"
-    roles_premissions.append(f"{requester.display_name}: {premission}")
+async def create_roles(name: str, runtime: ToolRuntime[BotContext]) -> str:
+    """Create a new role in this Discord server.
 
-    ## checks if the user has a premission to manage roles
-    if  requester.guild_permissions.manage_roles:
-        ## checks if the user isn't asking to duplicate an existing role
-        if discord.utils.get(guild.roles , name=name):
-            return f"role {name} is already exist"
-        else:
-            ## take action
-            add_role = await guild.create_role(name=name , reason=f"{requester.name} wanted to add a new role")
-            remove  = await guild.remove_role(name=name , reason=f"requster")
-            return f"created role {add_role.name}"
+    Args:
+        name: The new role's name, for example 'Raider'.
+    """
+    guild, requester = get_context(runtime)
 
-    return "\n".join(roles_premissions)
+    if not requester.guild_permissions.manage_roles:
+        return f"{requester.display_name} doesn't have permission to manage roles."
+    if discord.utils.get(guild.roles, name=name):
+        return f"Role '{name}' already exists."
+
+    try:
+        role = await guild.create_role(name=name, reason=f"Requested by {requester.display_name} via Raider")
+    except discord.Forbidden:
+        return "I don't have permission to create roles."
+    return f"Created role {role.name}."
 
 
+@tool
+async def remove_roles(name: str, runtime: ToolRuntime[BotContext]) -> str:
+    """Delete a role from this Discord server completely.
+
+    Args:
+        name: The exact name of the role to delete, for example 'Raider'.
+    """
+    guild, requester = get_context(runtime)
+
+    if not requester.guild_permissions.manage_roles:
+        return f"{requester.display_name} doesn't have permission to manage roles."
+    role = discord.utils.get(guild.roles, name=name)
+    if role is None:
+        return f"Role '{name}' doesn't exist."
+
+    try:
+        await role.delete(reason=f"Requested by {requester.display_name} via Raider")
+    except discord.Forbidden:
+        return f"I can't delete '{name}' - it may be above my own role."
+    return f"Deleted role {name}."
