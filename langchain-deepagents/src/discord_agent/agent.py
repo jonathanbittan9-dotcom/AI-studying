@@ -7,6 +7,7 @@ from discord_agent.tools.list_channels import list_channels
 from discord_agent.tools.roles import list_roles
 from discord_agent.tools.server_info import get_server_info
 from discord_agent.tools.read_channel import read_channel
+from discord_agent.tools.create_roles import manage_roles
 
 SYSTEM_PROMPT = (
     "You are Raider, the AI assistant of a Discord server. "
@@ -17,7 +18,7 @@ SYSTEM_PROMPT = (
 def build_agent():
     return create_deep_agent(
         model=create_model(),
-        tools=[list_channels, list_roles , get_server_info , read_channel],
+        tools=[list_channels, list_roles , get_server_info , read_channel , manage_roles],
         system_prompt=SYSTEM_PROMPT,
         context_schema=BotContext,
         middleware=[TodoListMiddleware()]
