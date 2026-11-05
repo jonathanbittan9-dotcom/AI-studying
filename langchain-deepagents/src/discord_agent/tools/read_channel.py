@@ -7,6 +7,7 @@ async def read_channel(channel_name:str , runtime: ToolRuntime[BotContext]) -> s
     """shows the messages of the channels"""
     guild = runtime.context.guild
     channel = discord.utils.get(guild.text_channels , name=channel_name)
+
     if channel is None:
         availbale = ",".join(c.name for c in guild.text_channels)
         return f"{channel_name} is not found. availbale channels: {availbale}"

@@ -1,0 +1,9 @@
+services:
+  bot:
+    build: .
+    image: agent:latest
+    env_file: .env
+    # Share the host's network so "localhost" inside the container reaches the
+    # Ollama server running on this PC (Ollama only listens on 127.0.0.1).
+    network_mode: host
+    restart: unless-stopped
