@@ -1,5 +1,6 @@
 from deepagents import create_deep_agent
 from langchain.agents.middleware import TodoListMiddleware
+from langgraph.checkpoint.memory import InMemorySaver
 
 from discord_agent.context.botcontext import BotContext
 from discord_agent.llm import create_model
@@ -15,11 +16,21 @@ SYSTEM_PROMPT = (
     "Keep answers short and casual, like a Discord message."
 )
 
+TOOLS =[
+    list_channels ,
+    list_roles ,
+    get_server_info ,
+    read_channel ,
+    create_roles ,
+    remove_roles ,
+]
+
 def build_agent():
     return create_deep_agent(
         model=create_model(),
-        tools=[list_channels, list_roles , get_server_info , read_channel , create_roles, remove_roles],
+        tools=TOOLS,
         system_prompt=SYSTEM_PROMPT,
         context_schema=BotContext,
-        middleware=[TodoListMiddleware()]
+        middleware=[TodoListMiddleware()] ,
+        checkpointer=InMemorySaver() ,
     )
