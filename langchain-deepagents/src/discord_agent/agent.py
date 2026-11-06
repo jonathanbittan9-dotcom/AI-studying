@@ -1,14 +1,17 @@
 from deepagents import create_deep_agent
 from langchain.agents.middleware import TodoListMiddleware
 from langgraph.checkpoint.memory import InMemorySaver
+from discord_agent.tools import (
+    create_roles ,
+    remove_roles ,
+    list_channels ,
+    read_channel ,
+    list_roles ,
+    get_server_info ,
 
+)
 from discord_agent.context.botcontext import BotContext
 from discord_agent.llm import create_model
-from discord_agent.tools.list_channels import list_channels
-from discord_agent.tools.roles import list_roles
-from discord_agent.tools.server_info import get_server_info
-from discord_agent.tools.read_channel import read_channel
-from discord_agent.tools.create_roles import create_roles, remove_roles
 
 SYSTEM_PROMPT = (
     "You are Raider, the AI assistant of a Discord server. "
