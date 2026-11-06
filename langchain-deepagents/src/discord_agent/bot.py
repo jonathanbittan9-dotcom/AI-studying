@@ -9,13 +9,35 @@ from discord_agent.context.botcontext import BotContext
 
 log = logging.getLogger(__name__)
 
-class RaiderClient(discord.client):
+DISCORD_MESSAGE_LIMIT = 2000
+
+class RaiderClient(discord.Client):
     def __init__(self , settings:Settings):
         intents = discord.Intents.default()
         intents.message_content = True  #the bot reads what people write
-        intents.members = members #see the member list
-        super.__init__(intents = intents)
+        intents.members = True #see the member list
+        super().__init__(intents = intents)
 
         self.settings = settings
         self.agent = build_agent()
         self.tree = app_commands.CommandTree(self)
+
+    async def setup_hook(self):
+        "Runs one before the bot connects: register the slash commands"
+        self.tree.add_command(ask)
+        guild = discord.Object(id = self.settings.guild_id)
+        await self.tree.sync(guild=guild)
+
+    async def answer(self , question: str , guild: discord.Guild , user: discord.Member , channel_id: int) -> str:
+        "ask the agents questions and returns his replay"
+        context = BotContext(guild=guild , requester=user)
+        config = {"configurable" : {"thread_id": f"{channel_id}-{user.id}"}}
+        result = await self.agent.ainvoke(
+            {"messages": [question]},
+            context=context,
+            config=config,
+        )
+        for message in result["messages"]:
+            log.debug("%s", message.pretty_repr())
+        return result["messages"][-1].text[:DISCORD_MESSAGE_LIMIT]
+
