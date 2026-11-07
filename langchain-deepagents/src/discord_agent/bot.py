@@ -1,5 +1,4 @@
 import logging
-
 import discord
 from discord import app_commands
 from discord_agent.config import Settings
@@ -41,3 +40,28 @@ class RaiderClient(discord.Client):
             log.debug("%s", message.pretty_repr())
         return result["messages"][-1].text[:DISCORD_MESSAGE_LIMIT]
 
+    async def on_ready(self):
+        log.info("Logged in as %s", self.user)
+
+    async def on_message(self, message: discord.Message):
+        if message.author.bot or message.guild is None:
+            return
+        if self.user not in message.mentions:
+            return
+
+        question = message.content.replace(self.user.mention, "").strip()
+        log.info("%s asked in #%s: %s", message.author, message.channel, question)
+
+        async with message.channel.typing():
+            reply = await self.answer(question, message.guild, message.author, message.channel.id)
+        await message.reply(reply)
+
+
+@app_commands.command(name="ask", description="Ask Raider anything")
+@app_commands.guild_only()
+async def ask(interaction: discord.Interaction, question: str):
+    await interaction.response.defer(thinking=True)
+    reply = await interaction.client.answer(
+        question, interaction.guild, interaction.user, interaction.channel_id
+    )
+    await interaction.followup.send(reply)
