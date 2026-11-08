@@ -5,7 +5,7 @@ from discord_agent.config import Settings
 from discord_agent.agent import build_agent
 from discord_agent.context.botcontext import BotContext
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from psycopg_pool import AsyncConnectionPool
+from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 log = logging.getLogger(__name__)
@@ -26,24 +26,25 @@ class RaiderClient(discord.Client):
     async def setup_hook(self):
         "Runs one before the bot connects: register the slash commands"
         guild = discord.Object(id=self.settings.guild_id)
-        self.pool = AsyncConnectioPool(
+        self.pool = AsyncConnectionPool(
             self.settings.database_url,
-            kwarg= {"autocommit":True , "row_factory": dict_row} ,  open = False ,
+            kwargs = {"autocommit":True , "row_factory": dict_row} ,  open = False ,
         )
         await self.pool.open()
         checkpointer = AsyncPostgresSaver(self.pool)
         await checkpointer.setup()
         self.agent = build_agent(checkpointer)
+        self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
+        await self.tree.sync(guild=guild)
+        log.info("Slash commands synced to guild %s", self.settings.guild_id)
+
 
     async def close(self) -> None:
         """Runs on shutdown: close the database connection early"""
         await self.pool.close()
-        await super.close()
+        await super().close()
 
 
-        self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
-        await self.tree.sync(guild=guild)
-        log.info("Slash commands synced to guild %s", self.settings.guild_id)
 
     async def answer(self , question: str , guild: discord.Guild , user: discord.Member , channel_id: int) -> str:
         "ask the agents questions and returns his replay"
