@@ -2,7 +2,6 @@ from langchain.tools import ToolRuntime, tool
 
 from discord_agent.context.botcontext import BotContext
 
-
 @tool
 async def list_roles(runtime: ToolRuntime[BotContext]) -> str:
     """List all the roles in this Discord server and how many members have each one."""

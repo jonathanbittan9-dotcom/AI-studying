@@ -1,6 +1,6 @@
 from deepagents import create_deep_agent
 from langchain.agents.middleware import TodoListMiddleware
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from discord_agent.tools import (
     create_roles ,
     remove_roles ,
@@ -8,6 +8,8 @@ from discord_agent.tools import (
     read_channel ,
     list_roles ,
     get_server_info ,
+    create_channels ,
+    remove_channels ,
 
 )
 from discord_agent.context.botcontext import BotContext
@@ -26,14 +28,16 @@ TOOLS =[
     read_channel ,
     create_roles ,
     remove_roles ,
+    create_channels ,
+    remove_channels ,
 ]
 
-def build_agent():
+def build_agent(checkpointer: BaseCheckpointSaver):
     return create_deep_agent(
         model=create_model(),
         tools=TOOLS,
         system_prompt=SYSTEM_PROMPT,
         context_schema=BotContext,
         middleware=[TodoListMiddleware()] ,
-        checkpointer=InMemorySaver() ,
+        checkpointer=checkpointer ,
     )
