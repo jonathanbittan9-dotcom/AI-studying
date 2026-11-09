@@ -24,10 +24,10 @@ async def create_roles(name: str, runtime: ToolRuntime[BotContext]) -> str:
         return f"Role '{name}' already exists."
 
     try:
-        role = await guild.create_role(name=name, reason=f"Requested by {requester.display_name} via Raider")
+        await guild.create_role(name=name, reason=f"Requested by {requester.display_name} via Raider")
     except discord.Forbidden:
         return "I don't have permission to create roles."
-    return f"Created role {role.name}."
+    return f"Created role {name}."
 
 
 @tool
