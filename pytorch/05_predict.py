@@ -3,9 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms
 from torchvision.datasets import FashionMNIST
+from pathlib import Path
 
 CLASS_NAMES = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
                "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DATA_DIR = Path(__file__).resolve().parent / "data"
+MODEL_PATH = DATA_DIR / "fashion_cnn.pt"
 
 # Same architecture as training -- must match exactly to load the saved weights
 class SimpleCNN(nn.Module):
@@ -26,9 +30,9 @@ class SimpleCNN(nn.Module):
         return x
 
 
-def load_model(path="C:/pytorch_data/fashion_cnn.pt"):
-    model = SimpleCNN()
-    model.load_state_dict(torch.load(path, map_location="cpu"))
+def load_model(path=MODEL_PATH):
+    model = SimpleCNN().to(device)
+    model.load_state_dict(torch.load(path, map_location=device))
     model.eval()   # inference mode: disables things like dropout
     return model
 
@@ -45,7 +49,7 @@ def predict(model, image_tensor):
         - reply with the label
     """
     with torch.no_grad():                       # no need to track gradients for inference
-        batch = image_tensor.unsqueeze(0)        # add batch dimension: (1, 1, 28, 28)
+        batch = image_tensor.unsqueeze(0).to(device)  # add batch dimension: (1, 1, 28, 28)
         logits = model(batch)
         probs = F.softmax(logits, dim=1)         # convert raw scores -> probabilities
         confidence, predicted_idx = probs.max(dim=1)
@@ -53,6 +57,7 @@ def predict(model, image_tensor):
 
 
 if __name__ == "__main__":
+    print("Using device:", device)
     model = load_model()
 
     # Grab a few real test images to simulate "photos a user sent"
@@ -60,7 +65,7 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,)),
     ])
-    test_data = FashionMNIST("C:/pytorch_data", train=False, download=True, transform=transform)
+    test_data = FashionMNIST(DATA_DIR, train=False, download=True, transform=transform)
 
     for i in [0, 1, 2, 3, 4]:
         image, true_label = test_data[i]
