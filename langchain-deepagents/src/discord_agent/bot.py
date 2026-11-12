@@ -51,7 +51,6 @@ class RaiderClient(discord.Client):
     async def answer(self , question: str , guild: discord.Guild , user: discord.Member , channel_id: int) -> str:
         "ask the agents questions and returns his replay"
         context = BotContext(guild=guild , requester=user)
-        channel_id_summary =[]
         config = {"configurable" : {"thread_id": thread_id_for(channel_id , user.id)}}
 
         result = await self.agent.ainvoke(
