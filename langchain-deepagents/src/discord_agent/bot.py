@@ -31,10 +31,11 @@ class RaiderClient(discord.Client):
             kwargs = {"autocommit":True , "row_factory": dict_row} ,  open = False ,
         )
         await self.pool.open()
-        checkpointer = AsyncPostgresSaver(self.pool)
-        await checkpointer.setup()
-        self.agent = build_agent(checkpointer)
+        self.checkpointer = AsyncPostgresSaver(self.pool)
+        await self.checkpointer.setup()
+        self.agent = build_agent(self.checkpointer)
         self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
+        self.tree.add_command(forget_data , guild=guild)
         await self.tree.sync(guild=guild)
         log.info("Slash commands synced to guild %s", self.settings.guild_id)
 
@@ -49,7 +50,7 @@ class RaiderClient(discord.Client):
     async def answer(self , question: str , guild: discord.Guild , user: discord.Member , channel_id: int) -> str:
         "ask the agents questions and returns his replay"
         context = BotContext(guild=guild , requester=user)
-        config = {"configurable" : {"thread_id": f"{channel_id}-{user.id}"}}
+        config = {"configurable" : {"thread_id": thread_id_for(channel_id , user.id)}}
         result = await self.agent.ainvoke(
             {"messages": [question]},
             context=context,
@@ -75,8 +76,13 @@ class RaiderClient(discord.Client):
             reply = await self.answer(question, message.guild, message.author, message.channel.id)
         await message.reply(reply)
 
+def thread_id_for(channel_id: int  , user_id: int) -> str:
+    """decides how the conversation is named"""
+    return f"{channel_id}-{user_id}"
 
-@app_commands.command(name="ask", description="Ask Raider anything")
+
+
+@app_commands.command(name="ask" ,  description="Ask Raider anything")
 @app_commands.guild_only()
 async def ask(interaction: discord.Interaction, question: str):
     await interaction.response.defer(thinking=True)
@@ -84,3 +90,11 @@ async def ask(interaction: discord.Interaction, question: str):
         question, interaction.guild, interaction.user, interaction.channel_id
     )
     await interaction.followup.send(reply)
+
+
+@app_commands.command(name="forget" , description="tell raider to forget data he collected by you")
+@app_commands.guild_only()
+async def forget_data(interaction: discord.Interaction):
+    thread_id = thread_id_for(interaction.channel_id , interaction.user.id)
+    await interaction.client.checkpointer.adelete_thread(thread_id)
+    await interaction.response.send_message("Done, I forgot our conversation here.", ephemeral=True)
