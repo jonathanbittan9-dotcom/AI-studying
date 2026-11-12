@@ -24,6 +24,7 @@ async def create_channels(name:str , runtime: ToolRuntime[BotContext]):
 @tool
 async def remove_channels(name:str , runtime: ToolRuntime[BotContext]):
     """removes channels from the server"""
+    name = nam.strip().lstrip("#").lower().replace(" " , "-")
     guild = runtime.context.guild
     requester = runtime.context.requester
     if requester.guild_permissions.manage_channels:

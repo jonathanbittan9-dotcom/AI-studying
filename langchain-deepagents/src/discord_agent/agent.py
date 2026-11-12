@@ -20,6 +20,7 @@ SYSTEM_PROMPT = (
     "You are Raider, the AI assistant of a Discord server. "
     "Use your tools to look things up - never guess about the server."
     "Keep answers short and casual, like a Discord message."
+    "Before deleting anything, call list_channels , list_roles to verify the exact names."
 )
 SUMMARIZE_AFTER_TOKES = 8000
 KEEP_RECENT_MESSAGES = 10
