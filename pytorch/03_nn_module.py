@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
 # A network is a class that subclasses nn.Module.
 # - __init__ declares the layers (each layer owns its own weights)
 # - forward() defines how data flows through them
@@ -17,11 +20,11 @@ class TinyNet(nn.Module):
         x = self.layer2(x)
         return x
 
-model = TinyNet(in_features=4, hidden=8, out_features=2)
+model = TinyNet(in_features=4, hidden=8, out_features=2).to(device)
 print(model)
 
 # Feed it a fake batch: 5 samples, each with 4 features
-batch = torch.rand(5, 4)
+batch = torch.rand(5, 4, device=device)
 output = model(batch)   # calls forward() under the hood
 print("\ninput shape:", batch.shape)
 print("output shape:", output.shape)   # (5, 2) — 2 raw scores per sample

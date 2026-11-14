@@ -1,18 +1,21 @@
 import torch
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
 # requires_grad=True tells PyTorch: "track operations on this tensor,
 # I'll want gradients w.r.t. it later"
-w = torch.tensor(2.0, requires_grad=True)
-b = torch.tensor(1.0, requires_grad=True)
+w = torch.tensor(2.0, device=device, requires_grad=True)
+b = torch.tensor(1.0, device=device, requires_grad=True)
 
-x = torch.tensor(3.0)   # input data — we don't need gradients w.r.t. inputs
+x = torch.tensor(3.0, device=device)   # input data — we don't need gradients w.r.t. inputs
 
 # A tiny "model": y = w * x + b
 y = w * x + b
 print("y =", y.item())   # 2*3 + 1 = 7
 
 # Pretend y should have been 10 — define a loss (squared error)
-target = torch.tensor(10.0)
+target = torch.tensor(10.0, device=device)
 loss = (y - target) ** 2
 print("loss =", loss.item())   # (7-10)^2 = 9
 

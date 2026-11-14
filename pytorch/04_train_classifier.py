@@ -3,17 +3,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from pathlib import Path
 
 torch.manual_seed(0)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
 
 # --- 1. Data ---
 # Convert images to tensors and normalize pixel values to roughly [-1, 1]
 transform = transforms.Compose([
-    transforms.ToTensor(),
+    transforms.=ToTensor(),
     transforms.Normalize((0.5,), (0.5,)),
 ])
 
-DATA_DIR = "C:/pytorch_data"  # short local path, avoids the UNC path entirely
+DATA_DIR = Path(__file__).resolve().parent / "data"
+MODEL_PATH = DATA_DIR / "fashion_cnn.pt"
 
 train_data = datasets.FashionMNIST(DATA_DIR, train=True, download=True, transform=transform)
 test_data = datasets.FashionMNIST(DATA_DIR, train=False, download=True, transform=transform)
@@ -24,8 +28,10 @@ CLASS_NAMES = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
 print(f"train samples: {len(train_data)}, test samples: {len(test_data)}")
 print("one image shape:", train_data[0][0].shape)  # (1, 28, 28) -- 1 channel (grayscale)
 
-train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_data, batch_size=256, shuffle=False)
+train_loader = DataLoader(train_data, batch_size=64, shuffle=True,
+                          pin_memory=device.type == "cuda")
+test_loader = DataLoader(test_data, batch_size=256, shuffle=False,
+                         pin_memory=device.type == "cuda")
 
 # --- 2. Model: a small CNN ---
 class SimpleCNN(nn.Module):
@@ -47,7 +53,7 @@ class SimpleCNN(nn.Module):
         x = self.fc2(x)                         # raw scores ("logits"), one per class
         return x
 
-model = SimpleCNN()
+model = SimpleCNN().to(device)
 
 # --- 3. Loss and optimizer ---
 loss_fn = nn.CrossEntropyLoss()  # standard loss for multi-class classification
@@ -60,6 +66,8 @@ for epoch in range(EPOCHS):
     model.train()
     total_loss = 0.0
     for images, labels in train_loader:
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
         optimizer.zero_grad()          # clear gradients from last step
         outputs = model(images)        # forward pass
         loss = loss_fn(outputs, labels)
@@ -75,6 +83,8 @@ correct = 0
 total = 0
 with torch.no_grad():
     for images, labels in test_loader:
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
         outputs = model(images)
         predicted = outputs.argmax(dim=1)   # class with highest score
         correct += (predicted == labels).sum().item()
@@ -83,5 +93,5 @@ with torch.no_grad():
 print(f"\ntest accuracy: {100 * correct / total:.2f}%")
 
 # --- 6. Save the trained model so we can reuse it later (e.g. from a bot) ---
-torch.save(model.state_dict(), "C:/pytorch_data/fashion_cnn.pt")
-print("saved model to C:/pytorch_data/fashion_cnn.pt")
+torch.save(model.state_dict(), MODEL_PATH)
+print(f"saved model to {MODEL_PATH}")

@@ -1,3 +1,5 @@
+from langgraph.checkpoint.memory import InMemorySaver
+
 from discord_agent.agent import build_agent
 
 
@@ -6,4 +8,5 @@ def test_agent_builds(monkeypatch):
     monkeypatch.setenv("DISCORD_TOKEN", "fake-token")
     monkeypatch.setenv("MODEL", "groq:openai/gpt-oss-120b")
     monkeypatch.setenv("GROQ_API_KEY", "fake-key")
-    assert build_agent() is not None
+    monkeypatch.setenv("DATABASE_URL", "postgresql://fake@localhost/fake")
+    assert build_agent(InMemorySaver()) is not None

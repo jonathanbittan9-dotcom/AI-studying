@@ -1,25 +1,55 @@
 from deepagents import create_deep_agent
 from langchain.agents.middleware import TodoListMiddleware
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from discord_agent.tools import (
+    create_roles ,
+    remove_roles ,
+    list_channels ,
+    read_channel ,
+    list_roles ,
+    get_server_info ,
+    create_channels ,
+    remove_channels ,
 
+)
 from discord_agent.context.botcontext import BotContext
 from discord_agent.llm import create_model
-from discord_agent.tools.list_channels import list_channels
-from discord_agent.tools.roles import list_roles
-from discord_agent.tools.server_info import get_server_info
-from discord_agent.tools.read_channel import read_channel
-from discord_agent.tools.create_roles import create_roles, remove_roles
+from langchain.agents.middleware import SummarizationMiddleware
 
 SYSTEM_PROMPT = (
     "You are Raider, the AI assistant of a Discord server. "
     "Use your tools to look things up - never guess about the server."
     "Keep answers short and casual, like a Discord message."
+    "Before deleting anything, call list_channels , list_roles to verify the exact names."
 )
+SUMMARIZE_AFTER_TOKES = 8000
+KEEP_RECENT_MESSAGES = 10
 
-def build_agent():
+TOOLS =[
+    list_channels ,
+    list_roles ,
+    get_server_info ,
+    read_channel ,
+    create_roles ,
+    remove_roles ,
+    create_channels ,
+    remove_channels ,
+]
+
+def build_agent(checkpointer: BaseCheckpointSaver):
+    model = create_model()
     return create_deep_agent(
-        model=create_model(),
-        tools=[list_channels, list_roles , get_server_info , read_channel , create_roles, remove_roles],
+        model=model,
+        tools=TOOLS,
         system_prompt=SYSTEM_PROMPT,
         context_schema=BotContext,
-        middleware=[TodoListMiddleware()]
+        middleware=[
+            TodoListMiddleware() ,
+            SummarizationMiddleware(
+                model = model ,
+                trigger=("tokens" , SUMMARIZE_AFTER_TOKES) ,
+                keep=("messages" , KEEP_RECENT_MESSAGES) ,
+            )
+             ] ,
+        checkpointer=checkpointer ,
     )

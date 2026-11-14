@@ -1,9 +1,36 @@
 services:
   bot:
     build: .
-    image: agent:latest
+    # Published by .github/workflows/discord-agent-release.yml. Pick a version with
+    # AGENT_VERSION=0.1.0 docker compose up -d   (defaults to latest)
+    image: ghcr.io/jonathanbittan9-dotcom/discord-agent:${AGENT_VERSION:-latest}
     env_file: .env
     # Share the host's network so "localhost" inside the container reaches the
-    # Ollama server running on this PC (Ollama only listens on 127.0.0.1).
+    # Ollama server and Postgres running on this PC.
     network_mode: host
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: raider
+      POSTGRES_DB: raider
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Only reachable from this PC; 5433 because 5432 is taken by another container.
+    ports:
+      - "127.0.0.1:5433:5432"
+    # The conversations live in this volume, so they survive restarts and rebuilds.
+    volumes:
+      - raider-db:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raider -d raider"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  raider-db:
