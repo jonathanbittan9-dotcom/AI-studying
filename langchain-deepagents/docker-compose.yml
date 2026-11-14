@@ -1,7 +1,9 @@
 services:
   bot:
     build: .
-    image: agent:latest
+    # Published by .github/workflows/discord-agent-release.yml. Pick a version with
+    # AGENT_VERSION=0.1.0 docker compose up -d   (defaults to latest)
+    image: ghcr.io/jonathanbittan9-dotcom/discord-agent:${AGENT_VERSION:-latest}
     env_file: .env
     # Share the host's network so "localhost" inside the container reaches the
     # Ollama server and Postgres running on this PC.
