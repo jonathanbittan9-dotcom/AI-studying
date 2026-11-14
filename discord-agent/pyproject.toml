@@ -3,8 +3,6 @@ name = "discord-agent"
 version = "0.1.0"
 description = "An AI agent that chats with, informs, and manages a Discord server."
 requires-python = ">=3.12"
-
-
 dependencies = [
     "deepagents>=0.7",
     "langchain-anthropic>=1.7",
@@ -17,7 +15,6 @@ dependencies = [
     "langgraph-checkpoint-postgres>=3.0",
     "psycopg[binary,pool]>=3.2",
 ]
-
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
@@ -32,9 +29,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/discord_agent"]
 
+[tool.ruff]
+line-length = 110
+
 [tool.ruff.lint]
-# Real bugs only: syntax errors (E9) and pyflakes (F) - undefined names, unused imports, etc.
-select = ["E9", "F"]
+# E9/F: real bugs (syntax errors, undefined names, unused imports). I: sorted imports.
+select = ["E9", "F", "I"]
 
 
 

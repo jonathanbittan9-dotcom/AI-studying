@@ -10,7 +10,7 @@ load_dotenv()
 class Settings:
     model: str
     discord_token: str
-    guild_id: int | None    # None -> slash commands are registered globally
+    guild_id: int | None  # None -> slash commands are registered globally
     database_url: str
 
 
