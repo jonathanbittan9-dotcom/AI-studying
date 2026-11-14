@@ -52,4 +52,5 @@ def build_agent(checkpointer: BaseCheckpointSaver):
             )
              ] ,
         checkpointer=checkpointer ,
+        # interrupt_on={"remove_channels": True , "remove_roles": True}
     )
