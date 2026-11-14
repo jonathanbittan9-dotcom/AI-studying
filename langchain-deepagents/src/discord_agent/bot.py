@@ -7,6 +7,7 @@ from discord_agent.context.botcontext import BotContext
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
+from langchain.agents.middleware import SummarizationMiddleware
 
 log = logging.getLogger(__name__)
 
