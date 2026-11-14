@@ -3,16 +3,16 @@ name: discord-agent CI
 on:
   push:
     branches: [master]
-    paths: ["langchain-deepagents/**", ".github/workflows/discord-agent.yml"]
+    paths: ["discord-agent/**", ".github/workflows/discord-agent.yml"]
   pull_request:
-    paths: ["langchain-deepagents/**", ".github/workflows/discord-agent.yml"]
+    paths: ["discord-agent/**", ".github/workflows/discord-agent.yml"]
 
 jobs:
   check:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: langchain-deepagents
+        working-directory: discord-agent
 
     steps:
       - uses: actions/checkout@v4
@@ -21,13 +21,16 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-          cache-dependency-path: langchain-deepagents/pyproject.toml
+          cache-dependency-path: discord-agent/pyproject.toml
 
       - name: Install
         run: pip install -e ".[dev]"
 
       - name: Lint (ruff)
         run: ruff check src tests
+
+      - name: Format check (ruff)
+        run: ruff format --check src tests
 
       - name: Test (pytest)
         run: pytest -v
