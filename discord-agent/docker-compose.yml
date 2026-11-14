@@ -1,3 +1,5 @@
+name: discord-agent
+
 services:
   bot:
     build: .
@@ -16,21 +18,21 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_USER: raider
-      POSTGRES_DB: raider
+      POSTGRES_USER: discord_agent
+      POSTGRES_DB: discord_agent
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     # Only reachable from this PC; 5433 because 5432 is taken by another container.
     ports:
       - "127.0.0.1:5433:5432"
     # The conversations live in this volume, so they survive restarts and rebuilds.
     volumes:
-      - raider-db:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U raider -d raider"]
+      test: ["CMD-SHELL", "pg_isready -U discord_agent -d discord_agent"]
       interval: 2s
       timeout: 3s
       retries: 15
 
 volumes:
-  raider-db:
+  db-data:

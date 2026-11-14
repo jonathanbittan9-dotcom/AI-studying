@@ -1,4 +1,13 @@
+# Python
+.venv/
 venv/
 __pycache__/
-C:/
 *.pyc
+
+# Secrets
+.env
+
+# Downloaded datasets and trained models (pytorch/)
+pytorch/data/
+*.pt
+*.pth

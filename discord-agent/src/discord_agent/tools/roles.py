@@ -1,12 +1,17 @@
+"""Tools for reading and managing the server's roles."""
+
 import discord
 from langchain.tools import ToolRuntime, tool
 
-from discord_agent.context.botcontext import BotContext
+from discord_agent.context import BotContext
+from discord_agent.tools._common import get_context
 
 
-def get_context(runtime: ToolRuntime[BotContext]) -> tuple[discord.Guild, discord.Member]:
-    """Return the server and the member who asked."""
-    return runtime.context.guild, runtime.context.requester
+@tool
+async def list_roles(runtime: ToolRuntime[BotContext]) -> str:
+    """List all the roles in this Discord server and how many members have each one."""
+    guild = runtime.context.guild
+    return "\n".join(f"{role.name} - {len(role.members)} members" for role in guild.roles)
 
 
 @tool

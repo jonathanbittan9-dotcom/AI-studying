@@ -7,7 +7,7 @@ name: discord-agent release
 on:
   push:
     branches: [master]
-    paths: ["langchain-deepagents/**"]
+    paths: ["discord-agent/**"]
 
 permissions:
   contents: write
@@ -22,7 +22,7 @@ jobs:
       tag: ${{ steps.next.outputs.tag }}
     defaults:
       run:
-        working-directory: langchain-deepagents
+        working-directory: discord-agent
     env:
       CZ: uvx --from commitizen==4.19.3 cz
     steps:
