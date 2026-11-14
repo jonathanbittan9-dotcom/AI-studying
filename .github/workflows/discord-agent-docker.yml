@@ -1,0 +1,64 @@
+name: discord-agent docker
+
+on:
+  # A release created with GITHUB_TOKEN (as discord-agent-release.yml does)
+  # does not trigger `release` events, so the release workflow calls this one
+  # directly. The `release` trigger covers releases you create by hand.
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    # This repo holds several projects; only build for discord-agent tags.
+    if: startsWith(inputs.tag || github.event.release.tag_name, 'discord-agent-v')
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+          persist-credentials: false
+
+      # "discord-agent-v0.2.0" -> "0.2.0" (metadata-action needs plain semver)
+      - name: Strip tag prefix
+        id: v
+        run: echo "version=${TAG#discord-agent-v}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/discord-agent
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.v.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.v.outputs.version }}
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: langchain-deepagents
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

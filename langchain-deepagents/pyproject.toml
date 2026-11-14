@@ -37,3 +37,9 @@ packages = ["src/discord_agent"]
 select = ["E9", "F"]
 
 
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "scm"
+major_version_zero = true
+tag_format = "discord-agent-v$version"

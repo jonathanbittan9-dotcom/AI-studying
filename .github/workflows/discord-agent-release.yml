@@ -1,63 +1,68 @@
 name: discord-agent release
 
-# Push a tag like "discord-agent-v0.2.0" to build the Docker image and publish
-# it to GitHub Container Registry (ghcr.io) plus create a GitHub Release.
+# On every push to master that touches the bot, commitizen reads the
+# conventional commits since the last "discord-agent-v*" tag and decides the
+# next version (fix: -> patch, feat: -> minor). If there is something to
+# release, it creates the tag + GitHub Release, then builds the Docker image.
 on:
   push:
-    tags: ["discord-agent-v*"]
+    branches: [master]
+    paths: ["langchain-deepagents/**"]
 
 permissions:
-  contents: write   # create the GitHub Release
-  packages: write   # push to ghcr.io
+  contents: write
 
-env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/discord-agent
+concurrency:
+  group: discord-agent-release
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    defaults:
+      run:
+        working-directory: langchain-deepagents
+    env:
+      CZ: uvx --from commitizen==4.19.3 cz
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Read version from tag
-        id: v
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Compute next version
+        id: next
         run: |
-          VERSION="${GITHUB_REF_NAME#discord-agent-v}"
-          PYPROJECT=$(grep -m1 '^version' langchain-deepagents/pyproject.toml | cut -d'"' -f2)
-          if [ "$VERSION" != "$PYPROJECT" ]; then
-            echo "::error::Tag version $VERSION does not match pyproject.toml version $PYPROJECT"
-            exit 1
+          set +e
+          version=$($CZ bump --get-next --yes)
+          status=$?
+          set -e
+          if [ "$status" -eq 21 ]; then
+            echo "No releasable commits since the last tag"
+            exit 0
           fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "minor=${VERSION%.*}" >> "$GITHUB_OUTPUT"
+          [ "$status" -eq 0 ] || exit "$status"
+          echo "tag=discord-agent-v$version" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: langchain-deepagents
-          push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.v.outputs.version }}
-            ${{ env.IMAGE }}:${{ steps.v.outputs.minor }}
-            ${{ env.IMAGE }}:latest
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ steps.v.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Create GitHub Release
+      - name: Create tag and release
+        if: steps.next.outputs.tag
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.next.outputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "discord-agent v${{ steps.v.outputs.version }}" \
-            --generate-notes \
-            --notes "Docker image: \`docker pull ${{ env.IMAGE }}:${{ steps.v.outputs.version }}\`"
+          previous=$(git describe --tags --abbrev=0 --match 'discord-agent-v*' 2>/dev/null || true)
+          $CZ changelog --dry-run --unreleased-version "$TAG" ${previous:+--start-rev "$previous"} > notes.md
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --notes-file notes.md
+
+  docker:
+    needs: release
+    if: needs.release.outputs.tag
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/discord-agent-docker.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
