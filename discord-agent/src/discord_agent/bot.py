@@ -58,6 +58,7 @@ class RaiderClient(discord.Client):
             context=context,
             config=config,
         )
+        log.debug(result.get("__interrupt__"))
         for message in result["messages"]:
             log.debug("%s", message.pretty_repr())
         return result["messages"][-1].text[:DISCORD_MESSAGE_LIMIT]
