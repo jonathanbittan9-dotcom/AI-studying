@@ -3,7 +3,6 @@ import logging
 import discord
 from discord import app_commands
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from langgraph.types import Command
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
@@ -53,15 +52,13 @@ class RaiderClient(discord.Client):
         """Ask the agent a question and return its reply."""
         context = BotContext(guild=guild, requester=user)
         config = {"configurable": {"thread_id": thread_id_for(channel_id, user.id)}}
-        # safety_decision = question
 
         result = await self.agent.ainvoke(
             {"messages": [question]},
             context=context,
             config=config,
         )
-        # if result["__interrupt__"][0].value["action requests"]:
-        #     await self.agent.ainvoke(Command(resume={"decisions":[{"type": safety_decision}]}) , config=config , context=context)
+        log.debug(result.get("__interrupt__"))
         for message in result["messages"]:
             log.debug("%s", message.pretty_repr())
         return result["messages"][-1].text[:DISCORD_MESSAGE_LIMIT]
