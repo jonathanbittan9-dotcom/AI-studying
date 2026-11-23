@@ -5,6 +5,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from discord_agent.context import BotContext
 from discord_agent.llm import create_model
 from discord_agent.tools import (
+    create_category,
     create_channels,
     create_roles,
     get_server_info,
@@ -33,6 +34,7 @@ TOOLS = [
     remove_roles,
     create_channels,
     remove_channels,
+    create_category,
 ]
 
 
@@ -52,5 +54,5 @@ def build_agent(checkpointer: BaseCheckpointSaver):
             ),
         ],
         checkpointer=checkpointer,
-        interrupt_on={"remove_roles": True , "remove_channels": True}
+        interrupt_on={"remove_roles": True, "remove_channels": True},
     )

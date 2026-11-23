@@ -3,13 +3,13 @@ import logging
 import discord
 from discord import app_commands
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.types import Command
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 from discord_agent.agent import build_agent
 from discord_agent.config import Settings
 from discord_agent.context import BotContext
-from langgraph.types import Command
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class RaiderClient(discord.Client):
         self.agent = build_agent(self.checkpointer)
         self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
         self.tree.add_command(forget_data, guild=guild)
-        self.tree.add_command(list_history , guild=guild)
+        self.tree.add_command(list_history, guild=guild)
         await self.tree.sync(guild=guild)
         log.info("Slash commands synced to guild %s", self.settings.guild_id)
 
@@ -87,35 +87,36 @@ class RaiderClient(discord.Client):
         else:
             await message.reply(reply)
 
+
 class Approval_view(discord.ui.View):
-    def __init__(self , bot , config , context , requester_id):
+    def __init__(self, bot, config, context, requester_id):
         super().__init__(timeout=300)
         self.bot = bot
         self.config = config
         self.context = context
-        self.requester_id  = requester_id
+        self.requester_id = requester_id
 
-    async def resume(self , interaction , decision_type):
+    async def resume(self, interaction, decision_type):
         if interaction.user.id != self.requester_id:
             await interaction.response.send_message("Not your request", ephemeral=True)
             return
         else:
             await interaction.response.defer()
             result = await self.bot.agent.ainvoke(
-                Command(resume={"decisions":[{"type": decision_type}]}) ,
-                context=self.context ,
-                config=self.config ,
+                Command(resume={"decisions": [{"type": decision_type}]}),
+                context=self.context,
+                config=self.config,
             )
             await interaction.followup.send(result["messages"][-1].text or "Done")
             self.stop()
 
-    @discord.ui.button(label="Approve" , style=discord.ButtonStyle.danger)
-    async def approve(self , interaction , button):
-        await self.resume(interaction , "approve")
+    @discord.ui.button(label="Approve", style=discord.ButtonStyle.danger)
+    async def approve(self, interaction, button):
+        await self.resume(interaction, "approve")
 
-    @discord.ui.button(label="Reject" , style=discord.ButtonStyle.secondary)
-    async def reject(self , interaction , button):
-        await self.resume(interaction , "reject")
+    @discord.ui.button(label="Reject", style=discord.ButtonStyle.secondary)
+    async def reject(self, interaction, button):
+        await self.resume(interaction, "reject")
 
 
 def thread_id_for(channel_id: int, user_id: int) -> str:
@@ -144,7 +145,7 @@ async def forget_data(interaction: discord.Interaction):
     await interaction.response.send_message("Done, I forgot our conversation here.", ephemeral=True)
 
 
-@app_commands.command(name="history" , description="summarizes you're chat history with raider")
+@app_commands.command(name="history", description="summarizes you're chat history with raider")
 @app_commands.guild_only()
 async def list_history(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True, thinking=True)
