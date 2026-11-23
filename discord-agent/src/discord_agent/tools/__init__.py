@@ -1,5 +1,6 @@
 """The tools the agent can call. Add new tools here and to TOOLS in agent.py."""
 
+from discord_agent.tools.categories import create_category
 from discord_agent.tools.channels import (
     create_channels,
     list_channels,
@@ -18,4 +19,5 @@ __all__ = [
     "read_channel",
     "remove_channels",
     "remove_roles",
+    "create_category",
 ]
