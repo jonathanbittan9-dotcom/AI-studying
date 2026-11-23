@@ -41,6 +41,7 @@ class RaiderClient(discord.Client):
         self.agent = build_agent(self.checkpointer)
         self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
         self.tree.add_command(forget_data, guild=guild)
+        self.tree.add_command(list_history , guild=guild)
         await self.tree.sync(guild=guild)
         log.info("Slash commands synced to guild %s", self.settings.guild_id)
 
@@ -141,3 +142,35 @@ async def forget_data(interaction: discord.Interaction):
     thread_id = thread_id_for(interaction.channel_id, interaction.user.id)
     await interaction.client.checkpointer.adelete_thread(thread_id)
     await interaction.response.send_message("Done, I forgot our conversation here.", ephemeral=True)
+
+
+@app_commands.command(name="history" , description="summarizes you're chat history with raider")
+@app_commands.guild_only()
+async def list_history(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True, thinking=True)
+
+    try:
+        history = []
+        async for message in interaction.channel.history(limit=100):
+            if message.author.id in (interaction.user.id, interaction.client.user.id):
+                content = message.content or "[message has no text]"
+                history.append(f"{message.author.display_name}: {content}")
+    except discord.Forbidden:
+        await interaction.followup.send(
+            "I need the Read Message History permission to show this channel's history.",
+            ephemeral=True,
+        )
+        return
+
+    if not history:
+        await interaction.followup.send(
+            "I couldn't find any messages from you or Raider in the latest 100 channel messages.",
+            ephemeral=True,
+        )
+        return
+
+    # Discord returns newest messages first; show them in conversation order.
+    history.reverse()
+    response = "\n".join(history)
+    for start in range(0, len(response), DISCORD_MESSAGE_LIMIT):
+        await interaction.followup.send(response[start : start + DISCORD_MESSAGE_LIMIT], ephemeral=True)
