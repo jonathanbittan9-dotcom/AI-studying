@@ -29,7 +29,6 @@ class RaiderClient(discord.Client):
 
     async def setup_hook(self):
         """Runs once before the bot connects: open the database and register the slash commands."""
-        guild = discord.Object(id=self.settings.guild_id)
         self.pool = AsyncConnectionPool(
             self.settings.database_url,
             kwargs={"autocommit": True, "row_factory": dict_row},
@@ -39,12 +38,21 @@ class RaiderClient(discord.Client):
         self.checkpointer = AsyncPostgresSaver(self.pool)
         await self.checkpointer.setup()
         self.agent = build_agent(self.checkpointer)
-        self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
-        self.tree.add_command(forget_data, guild=guild)
-        self.tree.add_command(list_history, guild=guild)
-        self.tree.add_command(shared_thread , guild=guild)
-        await self.tree.sync(guild=guild)
-        log.info("Slash commands synced to guild %s", self.settings.guild_id)
+        commands = [ask, forget_data, list_history, shared_thread]
+
+        if self.settings.guild_id:
+            # test server: commands update instantly
+            guild = discord.Object(id=self.settings.guild_id)
+            for command in commands:
+                self.tree.add_command(command, guild=guild)
+            await self.tree.sync(guild=guild)
+            log.info("Slash commands synced to guild %s", self.settings.guild_id)
+        else:
+            # every server the bot is in
+            for command in commands:
+                self.tree.add_command(command)
+            await self.tree.sync()
+            log.info("Slash commands synced globally")
 
     async def close(self) -> None:
         """Runs on shutdown: close the database connections."""
