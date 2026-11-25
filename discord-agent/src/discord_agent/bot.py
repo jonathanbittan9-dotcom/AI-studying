@@ -42,6 +42,7 @@ class RaiderClient(discord.Client):
         self.tree.add_command(ask, guild=guild)  # register /ask on OUR server
         self.tree.add_command(forget_data, guild=guild)
         self.tree.add_command(list_history, guild=guild)
+        self.tree.add_command(shared_thread , guild=guild)
         await self.tree.sync(guild=guild)
         log.info("Slash commands synced to guild %s", self.settings.guild_id)
 
@@ -53,7 +54,12 @@ class RaiderClient(discord.Client):
     async def answer(self, question: str, guild: discord.Guild, user: discord.Member, channel_id: int):
         """Ask the agent a question. Returns (reply, view); view is None unless approval is needed."""
         context = BotContext(guild=guild, requester=user)
-        config = {"configurable": {"thread_id": thread_id_for(channel_id, user.id)}}
+        if user == 0:
+            config = {"configurable": {"thread_id": (channel_id , [])}}
+        else:
+            config = {"configurable": {"thread_id": thread_id_for(channel_id , user.id)}}
+
+
 
         result = await self.agent.ainvoke(
             {"messages": [question]},
@@ -175,3 +181,15 @@ async def list_history(interaction: discord.Interaction):
     response = "\n".join(history)
     for start in range(0, len(response), DISCORD_MESSAGE_LIMIT):
         await interaction.followup.send(response[start : start + DISCORD_MESSAGE_LIMIT], ephemeral=True)
+
+@app_commands.command(name="shared_conversation", description="open a shared conversation with everyone in the current channel you are in")
+@app_commands.guild_only()
+async def shared_thread(interaction: discord.Interaction , question:str):
+    await interaction.response.defer(thinking=True)
+    replay, view = await interaction.client.answer(
+        question, interaction.guild, 0 , interaction.channel_id
+    )
+    if view:
+        await interaction.followup.send(replay, view=view)
+    else:
+        await interaction.followup.send(replay)
