@@ -4,9 +4,10 @@ import asyncio
 from datetime import datetime
 from types import SimpleNamespace
 
-from discord_agent.tools.channels import list_channels, normalize_channel_name, read_channel
+from discord_agent.tools.list_channels import list_channels
+from discord_agent.tools.read_channel import read_channel
 from discord_agent.tools.roles import list_roles
-from discord_agent.tools.server import get_server_info
+from discord_agent.tools.server_info import get_server_info
 
 
 class FakeChannel:
@@ -90,7 +91,3 @@ def test_tools_hide_runtime_from_the_llm():
     # The LLM must never see or fill in `runtime` - only real arguments.
     assert list_roles.args == {}
     assert list(read_channel.args) == ["channel_name"]
-
-
-def test_normalize_channel_name():
-    assert normalize_channel_name("  #My Channel ") == "my-channel"

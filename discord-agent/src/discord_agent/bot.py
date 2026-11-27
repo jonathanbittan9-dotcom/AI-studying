@@ -63,7 +63,7 @@ class RaiderClient(discord.Client):
         """Ask the agent a question. Returns (reply, view); view is None unless approval is needed."""
         context = BotContext(guild=guild, requester=user)
         if user == 0:
-            config = {"configurable": {"thread_id": (channel_id , [])}}
+            config = {"configurable": {"thread_id": (f"{channel_id } - shared")}}
         else:
             config = {"configurable": {"thread_id": thread_id_for(channel_id , user.id)}}
 

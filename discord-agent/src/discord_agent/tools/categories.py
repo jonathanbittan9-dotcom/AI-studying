@@ -2,13 +2,13 @@ import discord
 from langchain.tools import ToolRuntime, tool
 
 from discord_agent.context import BotContext
-from discord_agent.tools._common import get_context
 
 
 @tool
 async def create_category(runtime: ToolRuntime[BotContext], name: str):
     """create a new channel category"""
-    guild, requester = get_context(runtime)
+    guild = runtime.context.guild
+    requester = runtime.context.requester
     if requester.guild_permissions.manage_channels:
         if discord.utils.get(guild.categories, name=name):
             return "category is already exist."
