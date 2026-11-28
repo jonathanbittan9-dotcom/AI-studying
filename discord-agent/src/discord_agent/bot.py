@@ -68,7 +68,6 @@ class RaiderClient(discord.Client):
             config = {"configurable": {"thread_id": thread_id_for(channel_id , user.id)}}
 
 
-
         result = await self.agent.ainvoke(
             {"messages": [question]},
             context=context,
