@@ -59,10 +59,10 @@ class RaiderClient(discord.Client):
         await self.pool.close()
         await super().close()
 
-    async def answer(self, question: str, guild: discord.Guild, user: discord.Member, channel_id: int):
+    async def answer(self, question: str, guild: discord.Guild, user: discord.Member, channel_id: int , shared: Bool = False):
         """Ask the agent a question. Returns (reply, view); view is None unless approval is needed."""
         context = BotContext(guild=guild, requester=user)
-        if user == 0:
+        if shared:
             config = {"configurable": {"thread_id": (f"{channel_id } - shared")}}
         else:
             config = {"configurable": {"thread_id": thread_id_for(channel_id , user.id)}}
@@ -195,7 +195,7 @@ async def list_history(interaction: discord.Interaction):
 async def shared_thread(interaction: discord.Interaction , question:str):
     await interaction.response.defer(thinking=True)
     replay, view = await interaction.client.answer(
-        question, interaction.guild, 0 , interaction.channel_id
+        question, interaction.guild, interaction.user , interaction.channel_id , shared=True
     )
     if view:
         await interaction.followup.send(replay, view=view)
